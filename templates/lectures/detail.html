@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lecture.title }} - MedPass{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="/subjects">科目一覧</a> &gt;
+    <a href="/subjects/{{ lecture.subject.id }}">{{ lecture.subject.name }}</a> &gt;
+    {{ lecture.title }}
+</nav>
+
+<h1>{{ lecture.title }}</h1>
+
+<div class="info-section">
+    <p><strong>科目:</strong> {{ lecture.subject.name }}</p>
+    <p><strong>スライド数:</strong> {{ lecture.slide_count }}枚</p>
+    <p><strong>作成日:</strong> {{ lecture.created_at.strftime('%Y/%m/%d %H:%M') }}</p>
+</div>
+
+<div class="action-buttons">
+    <a href="/lectures/{{ lecture.id }}/input" class="btn btn-primary">OCRテキスト入力/編集</a>
+    <a href="/cards?lecture_id={{ lecture.id }}" class="btn btn-secondary">カード一覧</a>
+    <a href="/prints/lecture/{{ lecture.id }}" class="btn btn-secondary">PDF出力</a>
+    <form action="/lectures/{{ lecture.id }}/delete" method="post" style="display: inline;">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('この講義を削除しますか？関連するカードと問題も全て削除されます。')">削除</button>
+    </form>
+</div>
+
+{% if lecture.content %}
+<div class="content-section">
+    <h2>OCRテキスト</h2>
+    <div class="content-box">
+        <pre>{{ lecture.content }}</pre>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>OCRテキストがまだ入力されていません。</p>
+    <a href="/lectures/{{ lecture.id }}/input" class="btn btn-primary">テキストを入力する</a>
+</div>
+{% endif %}
+
+<div class="list-section">
+    <h2>カード一覧 ({{ lecture.cards|length }}件)</h2>
+    {% if lecture.cards %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>テーマ</th>
+                <th>重要度</th>
+                <th>問題数</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for card in lecture.cards %}
+            <tr>
+                <td>{{ card.theme }}</td>
+                <td>{{ "★" * card.importance }}{{ "☆" * (3 - card.importance) }}</td>
+                <td>{{ card.questions|length }}</td>
+                <td>
+                    <a href="/questions?card_id={{ card.id }}" class="btn btn-small">問題一覧</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">まだカードがありません。<a href="/cards?lecture_id={{ lecture.id }}">カードを追加</a>してください。</p>
+    {% endif %}
+</div>
+{% endblock %}

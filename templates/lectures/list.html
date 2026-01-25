@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}講義一覧 - MedPass{% endblock %}
+
+{% block content %}
+<h1>講義一覧</h1>
+
+<div class="list-section">
+    {% if lectures %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>タイトル</th>
+                <th>科目</th>
+                <th>スライド数</th>
+                <th>カード数</th>
+                <th>作成日</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lecture in lectures %}
+            <tr>
+                <td><a href="/lectures/{{ lecture.id }}">{{ lecture.title }}</a></td>
+                <td><a href="/subjects/{{ lecture.subject.id }}">{{ lecture.subject.name }}</a></td>
+                <td>{{ lecture.slide_count }}</td>
+                <td>{{ lecture.cards|length }}</td>
+                <td>{{ lecture.created_at.strftime('%Y/%m/%d') }}</td>
+                <td>
+                    <a href="/lectures/{{ lecture.id }}" class="btn btn-small">詳細</a>
+                    <a href="/lectures/{{ lecture.id }}/input" class="btn btn-small">テキスト入力</a>
+                    <a href="/prints/lecture/{{ lecture.id }}" class="btn btn-small btn-secondary">PDF出力</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">まだ講義がありません。<a href="/subjects">科目</a>から追加してください。</p>
+    {% endif %}
+</div>
+{% endblock %}

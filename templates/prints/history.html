@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}印刷履歴 - MedPass{% endblock %}
+
+{% block content %}
+<h1>印刷履歴</h1>
+
+<div class="list-section">
+    {% if prints %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>講義</th>
+                <th>生成日時</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for print in prints %}
+            <tr>
+                <td>
+                    {% if print.lecture %}
+                    <a href="/lectures/{{ print.lecture.id }}">{{ print.lecture.title }}</a>
+                    {% else %}
+                    (削除済み)
+                    {% endif %}
+                </td>
+                <td>{{ print.created_at.strftime('%Y/%m/%d %H:%M') }}</td>
+                <td>
+                    <a href="/prints/download/{{ print.id }}" class="btn btn-small btn-secondary">ダウンロード</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">まだPDFを生成していません。講義詳細ページから「PDF出力」を選択してください。</p>
+    {% endif %}
+</div>
+{% endblock %}

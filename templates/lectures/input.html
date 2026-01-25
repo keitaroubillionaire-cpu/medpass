@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}テキスト入力 - {{ lecture.title }} - MedPass{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="/subjects">科目一覧</a> &gt;
+    <a href="/subjects/{{ lecture.subject.id }}">{{ lecture.subject.name }}</a> &gt;
+    <a href="/lectures/{{ lecture.id }}">{{ lecture.title }}</a> &gt;
+    テキスト入力
+</nav>
+
+<h1>OCRテキスト入力</h1>
+<p class="subtitle">{{ lecture.title }}</p>
+
+<div class="form-section">
+    <form action="/lectures/{{ lecture.id }}/update-content" method="post" class="form-vertical">
+        <div class="form-group">
+            <label for="content">OCRテキスト</label>
+            <p class="form-help">スライドからOCRで抽出したテキストを貼り付けてください。</p>
+            <textarea id="content" name="content" rows="20" placeholder="ここにOCRテキストを貼り付け...">{{ lecture.content or '' }}</textarea>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <a href="/lectures/{{ lecture.id }}" class="btn btn-secondary">キャンセル</a>
+        </div>
+    </form>
+</div>
+
+<div class="tips-section">
+    <h3>ヒント</h3>
+    <ul>
+        <li>Google DriveやAdobe AcrobatでPDFからテキストを抽出できます</li>
+        <li>スライドごとに区切りを入れると後で整理しやすくなります</li>
+        <li>図表の説明も文字で入力しておくと復習に役立ちます</li>
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}カード一覧 - MedPass{% endblock %}
+
+{% block content %}
+{% if lecture %}
+<nav class="breadcrumb">
+    <a href="/subjects">科目一覧</a> &gt;
+    <a href="/subjects/{{ lecture.subject.id }}">{{ lecture.subject.name }}</a> &gt;
+    <a href="/lectures/{{ lecture.id }}">{{ lecture.title }}</a> &gt;
+    カード一覧
+</nav>
+<h1>{{ lecture.title }} - カード一覧</h1>
+{% else %}
+<h1>全カード一覧</h1>
+{% endif %}
+
+{% if lecture %}
+<div class="form-section">
+    <h2>新規カード追加</h2>
+    <form action="/cards/create" method="post" class="form-vertical">
+        <input type="hidden" name="lecture_id" value="{{ lecture.id }}">
+        <div class="form-group">
+            <label for="theme">テーマ</label>
+            <input type="text" id="theme" name="theme" placeholder="例: 心臓の4つの弁" required>
+        </div>
+        <div class="form-group">
+            <label for="summary">要約</label>
+            <textarea id="summary" name="summary" rows="3" placeholder="このテーマの重要ポイントを簡潔に..."></textarea>
+        </div>
+        <div class="form-group">
+            <label for="importance">重要度</label>
+            <select id="importance" name="importance">
+                <option value="1">☆☆☆ 低</option>
+                <option value="2" selected>★☆☆ 中</option>
+                <option value="3">★★★ 高</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">カードを追加</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="list-section">
+    {% if cards %}
+    <div class="card-grid">
+        {% for card in cards %}
+        <div class="theme-card importance-{{ card.importance }}">
+            <div class="card-header">
+                <h3>{{ card.theme }}</h3>
+                <span class="importance">{{ "★" * card.importance }}{{ "☆" * (3 - card.importance) }}</span>
+            </div>
+            {% if card.summary %}
+            <p class="card-summary">{{ card.summary }}</p>
+            {% endif %}
+            <div class="card-meta">
+                <span>問題数: {{ card.questions|length }}</span>
+                {% if card.lecture %}
+                <span>講義: {{ card.lecture.title }}</span>
+                {% endif %}
+            </div>
+            <div class="card-actions">
+                <a href="/questions?card_id={{ card.id }}" class="btn btn-small">問題一覧</a>
+                <form action="/cards/{{ card.id }}/delete" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('このカードを削除しますか？関連する問題も全て削除されます。')">削除</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">まだカードがありません。{% if lecture %}上のフォームから追加してください。{% else %}<a href="/lectures">講義</a>からカードを作成してください。{% endif %}</p>
+    {% endif %}
+</div>
+{% endblock %}

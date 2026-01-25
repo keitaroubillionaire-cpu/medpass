@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ subject.name }} - MedPass{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="/subjects">科目一覧</a> &gt; {{ subject.name }}
+</nav>
+
+<h1>{{ subject.name }}</h1>
+
+<div class="form-section">
+    <h2>新規講義追加</h2>
+    <form action="/lectures/create" method="post" class="form-vertical">
+        <input type="hidden" name="subject_id" value="{{ subject.id }}">
+        <div class="form-group">
+            <label for="title">講義タイトル</label>
+            <input type="text" id="title" name="title" placeholder="例: 第1回 心臓の構造" required>
+        </div>
+        <div class="form-group">
+            <label for="slide_count">スライド数</label>
+            <input type="number" id="slide_count" name="slide_count" value="0" min="0">
+        </div>
+        <button type="submit" class="btn btn-primary">講義を追加</button>
+    </form>
+</div>
+
+<div class="list-section">
+    <h2>講義一覧</h2>
+    {% if subject.lectures %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>タイトル</th>
+                <th>スライド数</th>
+                <th>カード数</th>
+                <th>作成日</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lecture in subject.lectures %}
+            <tr>
+                <td><a href="/lectures/{{ lecture.id }}">{{ lecture.title }}</a></td>
+                <td>{{ lecture.slide_count }}</td>
+                <td>{{ lecture.cards|length }}</td>
+                <td>{{ lecture.created_at.strftime('%Y/%m/%d') }}</td>
+                <td>
+                    <a href="/lectures/{{ lecture.id }}" class="btn btn-small">詳細</a>
+                    <a href="/lectures/{{ lecture.id }}/input" class="btn btn-small">テキスト入力</a>
+                    <a href="/prints/lecture/{{ lecture.id }}" class="btn btn-small btn-secondary">PDF出力</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">まだ講義がありません。上のフォームから追加してください。</p>
+    {% endif %}
+</div>
+{% endblock %}

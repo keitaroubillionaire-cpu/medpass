@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MedPass{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">MedPass</a>
+        </div>
+        {% if user %}
+        <ul class="nav-links">
+            <li><a href="/">ダッシュボード</a></li>
+            <li><a href="/subjects">科目</a></li>
+            <li><a href="/lectures">講義</a></li>
+            <li><a href="/cards">カード</a></li>
+            <li><a href="/questions">問題</a></li>
+        </ul>
+        <div class="nav-user">
+            <span class="username">{{ user.username }}</span>
+            <a href="/auth/logout" class="btn btn-small btn-secondary">ログアウト</a>
+        </div>
+        {% else %}
+        <div class="nav-auth">
+            <a href="/auth/login" class="btn btn-small">ログイン</a>
+            <a href="/auth/register" class="btn btn-small btn-primary">新規登録</a>
+        </div>
+        {% endif %}
+    </nav>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>MedPass - 医学部定期試験対策アプリ</p>
+    </footer>
+</body>
+</html>

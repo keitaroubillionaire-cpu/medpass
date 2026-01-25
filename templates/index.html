@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}ダッシュボード - MedPass{% endblock %}
+
+{% block content %}
+<h1>ダッシュボード</h1>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>科目数</h3>
+        <p class="stat-number">{{ total_subjects }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>講義数</h3>
+        <p class="stat-number">{{ total_lectures }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>カード数</h3>
+        <p class="stat-number">{{ total_cards }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>問題数</h3>
+        <p class="stat-number">{{ total_questions }}</p>
+    </div>
+</div>
+
+<div class="dashboard-section">
+    <h2>合格確率</h2>
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ pass_probability }}%"></div>
+    </div>
+    <p class="progress-text">{{ pass_probability }}%</p>
+</div>
+
+<div class="dashboard-section">
+    <h2>Next 5 - 次に勉強すべき問題</h2>
+    {% if next_questions %}
+    <ul class="question-list">
+        {% for question in next_questions %}
+        <li>
+            <a href="/questions?card_id={{ question.card_id }}">
+                {{ question.question_text[:50] }}{% if question.question_text|length > 50 %}...{% endif %}
+            </a>
+            {% if question.card %}
+            <span class="tag">{{ question.card.theme }}</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty-state">まだ問題がありません。講義からカードと問題を作成してください。</p>
+    {% endif %}
+</div>
+
+<div class="dashboard-section">
+    <h2>最近の科目</h2>
+    {% if subjects %}
+    <ul class="subject-list">
+        {% for subject in subjects %}
+        <li>
+            <a href="/subjects/{{ subject.id }}">{{ subject.name }}</a>
+            <span class="count">{{ subject.lectures|length }}講義</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty-state">まだ科目がありません。<a href="/subjects">科目を追加</a>してください。</p>
+    {% endif %}
+</div>
+{% endblock %}

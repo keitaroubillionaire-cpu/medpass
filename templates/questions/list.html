@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}問題一覧 - MedPass{% endblock %}
+
+{% block content %}
+{% if card %}
+<nav class="breadcrumb">
+    <a href="/cards">カード一覧</a> &gt;
+    {{ card.theme }} &gt;
+    問題一覧
+</nav>
+<h1>{{ card.theme }} - 問題一覧</h1>
+{% else %}
+<h1>全問題一覧</h1>
+{% endif %}
+
+{% if card %}
+<div class="form-section">
+    <h2>新規問題追加</h2>
+    <form action="/questions/create" method="post" class="form-vertical">
+        <input type="hidden" name="card_id" value="{{ card.id }}">
+        <div class="form-group">
+            <label for="question_text">問題文</label>
+            <textarea id="question_text" name="question_text" rows="3" placeholder="問題を入力..." required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="answer_200">解答（200字程度）</label>
+            <textarea id="answer_200" name="answer_200" rows="4" placeholder="模範解答を入力..."></textarea>
+        </div>
+        <div class="form-group">
+            <label for="rubric">採点基準</label>
+            <textarea id="rubric" name="rubric" rows="3" placeholder="採点のポイントを入力..."></textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="source_slide">出典スライド番号</label>
+                <input type="number" id="source_slide" name="source_slide" min="1">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="is_past_exam" value="true">
+                    過去問
+                </label>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">問題を追加</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="list-section">
+    {% if questions %}
+    <div class="question-cards">
+        {% for question in questions %}
+        <div class="question-card {% if question.is_past_exam %}past-exam{% endif %}">
+            <div class="question-header">
+                <span class="question-number">Q{{ loop.index }}</span>
+                {% if question.is_past_exam %}
+                <span class="tag tag-warning">過去問</span>
+                {% endif %}
+                {% if question.source_slide %}
+                <span class="tag">スライド {{ question.source_slide }}</span>
+                {% endif %}
+            </div>
+            <div class="question-text">
+                <p>{{ question.question_text }}</p>
+            </div>
+            {% if question.answer_200 %}
+            <details class="answer-section">
+                <summary>解答を表示</summary>
+                <div class="answer-text">
+                    <p>{{ question.answer_200 }}</p>
+                </div>
+            </details>
+            {% endif %}
+            {% if question.rubric %}
+            <details class="rubric-section">
+                <summary>採点基準</summary>
+                <div class="rubric-text">
+                    <p>{{ question.rubric }}</p>
+                </div>
+            </details>
+            {% endif %}
+
+            <div class="attempt-section">
+                <form action="/questions/{{ question.id }}/attempt" method="post" class="inline-form">
+                    <label>自己採点:</label>
+                    <select name="score">
+                        <option value="0">0 - 全く分からない</option>
+                        <option value="3">3 - 一部分かる</option>
+                        <option value="5">5 - 半分程度</option>
+                        <option value="7">7 - だいたい分かる</option>
+                        <option value="10">10 - 完璧</option>
+                    </select>
+                    <button type="submit" class="btn btn-small">記録</button>
+                </form>
+            </div>
+
+            <div class="question-actions">
+                <form action="/questions/{{ question.id }}/delete" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('この問題を削除しますか？')">削除</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">まだ問題がありません。{% if card %}上のフォームから追加してください。{% else %}<a href="/cards">カード</a>から問題を作成してください。{% endif %}</p>
+    {% endif %}
+</div>
+{% endblock %}
