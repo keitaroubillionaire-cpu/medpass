@@ -18,8 +18,6 @@ def set_auth_cookie(response: RedirectResponse, token: str):
         value=token,
         httponly=True,
         max_age=30 * 24 * 60 * 60,  # 30 days
-        samesite="none",
-        secure=True,
         path="/"
     )
     return response
