@@ -45,18 +45,24 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> Optional[User]:
     """Get current user from cookie token."""
     token = request.cookies.get("access_token")
+    print(f"DEBUG: Cookie token exists: {token is not None}")
+    print(f"DEBUG: All cookies: {request.cookies}")
+
     if not token:
         return None
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
+        user_id = payload.get("sub")
+        print(f"DEBUG: Decoded user_id: {user_id}")
         if user_id is None:
             return None
-    except JWTError:
+    except JWTError as e:
+        print(f"DEBUG: JWT Error: {e}")
         return None
 
     user = db.query(User).filter(User.id == user_id).first()
+    print(f"DEBUG: Found user: {user}")
     return user
 
 
