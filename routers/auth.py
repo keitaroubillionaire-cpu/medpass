@@ -11,19 +11,16 @@ from auth import get_password_hash, verify_password, create_access_token, get_cu
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-# Check if running on production (Render sets this)
-IS_PRODUCTION = os.getenv("RENDER", False)
-
-
 def set_auth_cookie(response: RedirectResponse, token: str):
-    """Set authentication cookie with proper settings for production/development."""
+    """Set authentication cookie."""
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
         max_age=30 * 24 * 60 * 60,  # 30 days
-        samesite="lax",
-        secure=bool(IS_PRODUCTION)  # True on HTTPS (production)
+        samesite="none",
+        secure=True,
+        path="/"
     )
     return response
 
@@ -121,5 +118,5 @@ async def register(
 @router.get("/logout")
 async def logout():
     response = RedirectResponse(url="/auth/login", status_code=302)
-    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="access_token", path="/")
     return response
