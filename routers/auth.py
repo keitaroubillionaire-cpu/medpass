@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -9,6 +10,22 @@ from auth import get_password_hash, verify_password, create_access_token, get_cu
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+# Check if running on production (Render sets this)
+IS_PRODUCTION = os.getenv("RENDER", False)
+
+
+def set_auth_cookie(response: RedirectResponse, token: str):
+    """Set authentication cookie with proper settings for production/development."""
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        max_age=30 * 24 * 60 * 60,  # 30 days
+        samesite="lax",
+        secure=bool(IS_PRODUCTION)  # True on HTTPS (production)
+    )
+    return response
 
 
 @router.get("/login")
@@ -38,14 +55,8 @@ async def login(
         })
 
     access_token = create_access_token(data={"sub": user.id})
-    response = RedirectResponse(url="/", status_code=302)
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        max_age=30 * 24 * 60 * 60,  # 30 days
-        samesite="lax"
-    )
+    response = RedirectResponse(url="/", status_code=303)
+    set_auth_cookie(response, access_token)
     return response
 
 
@@ -102,14 +113,8 @@ async def register(
 
     # Auto login
     access_token = create_access_token(data={"sub": user.id})
-    response = RedirectResponse(url="/", status_code=302)
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        max_age=30 * 24 * 60 * 60,
-        samesite="lax"
-    )
+    response = RedirectResponse(url="/", status_code=303)
+    set_auth_cookie(response, access_token)
     return response
 
 
