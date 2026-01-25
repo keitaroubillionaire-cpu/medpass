@@ -49,7 +49,7 @@ async def login(
             "error": "メールアドレスまたはパスワードが正しくありません"
         })
 
-    access_token = create_access_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
     response = RedirectResponse(url="/", status_code=303)
     set_auth_cookie(response, access_token)
     return response
@@ -107,7 +107,7 @@ async def register(
     db.refresh(user)
 
     # Auto login
-    access_token = create_access_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
     response = RedirectResponse(url="/", status_code=303)
     set_auth_cookie(response, access_token)
     return response

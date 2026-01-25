@@ -53,11 +53,12 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> Optiona
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        print(f"DEBUG: Decoded user_id: {user_id}")
-        if user_id is None:
+        user_id_str = payload.get("sub")
+        print(f"DEBUG: Decoded user_id: {user_id_str}")
+        if user_id_str is None:
             return None
-    except JWTError as e:
+        user_id = int(user_id_str)
+    except (JWTError, ValueError) as e:
         print(f"DEBUG: JWT Error: {e}")
         return None
 
