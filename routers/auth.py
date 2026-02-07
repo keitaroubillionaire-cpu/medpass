@@ -57,12 +57,10 @@ async def login(
 
 @router.get("/register")
 async def register_page(request: Request):
-    user = get_current_user(request, next(get_db()))
-    if user:
-        return RedirectResponse(url="/", status_code=302)
+    # 新規登録は停止中
     return templates.TemplateResponse("auth/register.html", {
         "request": request,
-        "error": None
+        "error": "新規登録は現在停止しています"
     })
 
 
@@ -75,42 +73,11 @@ async def register(
     password_confirm: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    # Validation
-    if password != password_confirm:
-        return templates.TemplateResponse("auth/register.html", {
-            "request": request,
-            "error": "パスワードが一致しません"
-        })
-
-    if len(password) < 6:
-        return templates.TemplateResponse("auth/register.html", {
-            "request": request,
-            "error": "パスワードは6文字以上で入力してください"
-        })
-
-    existing_user = db.query(User).filter(User.email == email).first()
-    if existing_user:
-        return templates.TemplateResponse("auth/register.html", {
-            "request": request,
-            "error": "このメールアドレスは既に登録されています"
-        })
-
-    # Create user
-    hashed_password = get_password_hash(password)
-    user = User(
-        email=email,
-        username=username,
-        hashed_password=hashed_password
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    # Auto login
-    access_token = create_access_token(data={"sub": str(user.id)})
-    response = RedirectResponse(url="/", status_code=303)
-    set_auth_cookie(response, access_token)
-    return response
+    # 新規登録は停止中
+    return templates.TemplateResponse("auth/register.html", {
+        "request": request,
+        "error": "新規登録は現在停止しています"
+    })
 
 
 @router.get("/logout")
