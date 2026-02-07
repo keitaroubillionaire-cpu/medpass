@@ -25,11 +25,34 @@
 </div>
 
 <div class="dashboard-section">
-    <h2>合格確率</h2>
-    <div class="progress-bar">
-        <div class="progress-fill" style="width: {{ pass_probability }}%"></div>
+    <h2>合格確率予測</h2>
+    <div class="pass-probabilities">
+        <div class="prob-card prob-90">
+            <div class="prob-label">90点到達</div>
+            <div class="prob-bar">
+                <div class="prob-fill" style="width: {{ pass_stats.prob_90 }}%"></div>
+            </div>
+            <div class="prob-value">{{ pass_stats.prob_90 }}%</div>
+        </div>
+        <div class="prob-card prob-80">
+            <div class="prob-label">80点到達</div>
+            <div class="prob-bar">
+                <div class="prob-fill" style="width: {{ pass_stats.prob_80 }}%"></div>
+            </div>
+            <div class="prob-value">{{ pass_stats.prob_80 }}%</div>
+        </div>
+        <div class="prob-card prob-60">
+            <div class="prob-label">60点到達（合格ライン）</div>
+            <div class="prob-bar">
+                <div class="prob-fill" style="width: {{ pass_stats.prob_60 }}%"></div>
+            </div>
+            <div class="prob-value">{{ pass_stats.prob_60 }}%</div>
+        </div>
     </div>
-    <p class="progress-text">{{ pass_probability }}%</p>
+    <div class="study-stats">
+        <p>現在のスコア: <strong>{{ pass_stats.weighted_score }}点</strong>（重要度加重平均）</p>
+        <p>学習進捗: <strong>{{ pass_stats.studied_count }}/{{ pass_stats.total_count }}問</strong>（{{ pass_stats.coverage }}%）</p>
+    </div>
 </div>
 
 <div class="dashboard-section">
@@ -49,6 +72,50 @@
     </ul>
     {% else %}
     <p class="empty-state">まだ問題がありません。講義からカードと問題を作成してください。</p>
+    {% endif %}
+</div>
+
+<div class="dashboard-section">
+    <h2>未出テーマ（過去問なし）</h2>
+    {% if uncovered_themes %}
+    <p class="section-desc">過去問がまだ紐付いていないテーマです。新問として出題される可能性があります。</p>
+    <ul class="theme-list">
+        {% for card in uncovered_themes %}
+        <li>
+            <a href="/questions?card_id={{ card.id }}">{{ card.theme }}</a>
+            <span class="importance">{{ "★" * card.importance }}{{ "☆" * (3 - card.importance) }}</span>
+            {% if card.lecture %}
+            <span class="tag">{{ card.lecture.subject.name }}</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty-state">全てのテーマに過去問が紐付いています。素晴らしい！</p>
+    {% endif %}
+</div>
+
+<div class="dashboard-section">
+    <h2>科目別 過去問カバレッジ</h2>
+    {% if subject_coverage %}
+    <div class="coverage-list">
+        {% for item in subject_coverage %}
+        <div class="coverage-item">
+            <div class="coverage-info">
+                <a href="/subjects/{{ item.subject.id }}">{{ item.subject.name }}</a>
+                <span class="coverage-detail">{{ item.covered_cards }}/{{ item.total_cards }}テーマ</span>
+            </div>
+            <div class="coverage-bar-container">
+                <div class="coverage-bar">
+                    <div class="coverage-fill {% if item.coverage_pct >= 80 %}high{% elif item.coverage_pct >= 50 %}mid{% else %}low{% endif %}" style="width: {{ item.coverage_pct }}%"></div>
+                </div>
+                <span class="coverage-pct">{{ item.coverage_pct }}%</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">科目を追加してカードを作成すると、ここにカバレッジが表示されます。</p>
     {% endif %}
 </div>
 

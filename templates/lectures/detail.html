@@ -19,10 +19,34 @@
 
 <div class="action-buttons">
     <a href="/lectures/{{ lecture.id }}/input" class="btn btn-primary">OCRテキスト入力/編集</a>
+    {% if lecture.content %}
+    <form action="/lectures/{{ lecture.id }}/generate-cards" method="post" style="display: inline;">
+        <button type="submit" class="btn btn-success" onclick="return confirm('AIでカードを自動生成しますか？既存のカードは保持されます。')">カード自動生成 (AI)</button>
+    </form>
+    {% endif %}
     <a href="/cards?lecture_id={{ lecture.id }}" class="btn btn-secondary">カード一覧</a>
     <a href="/prints/lecture/{{ lecture.id }}" class="btn btn-secondary">PDF出力</a>
     <form action="/lectures/{{ lecture.id }}/delete" method="post" style="display: inline;">
         <button type="submit" class="btn btn-danger" onclick="return confirm('この講義を削除しますか？関連するカードと問題も全て削除されます。')">削除</button>
+    </form>
+</div>
+
+<div class="upload-section">
+    <h2>PDFアップロード</h2>
+    {% if request.query_params.get('error') == 'pdf_only' %}
+    <p class="error-message">PDFファイルのみアップロード可能です。</p>
+    {% elif request.query_params.get('error') == 'pdf_error' %}
+    <p class="error-message">PDFの読み込みに失敗しました。</p>
+    {% elif request.query_params.get('error') == 'upload_error' %}
+    <p class="error-message">アップロード中にエラーが発生しました。</p>
+    {% endif %}
+    <form action="/lectures/{{ lecture.id }}/upload-pdf" method="post" enctype="multipart/form-data" class="upload-form">
+        <div class="form-group">
+            <label for="pdf_file">講義資料PDF</label>
+            <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required>
+            <p class="form-help">PDFからテキストを自動抽出します。既存のテキストがある場合は追記されます。</p>
+        </div>
+        <button type="submit" class="btn btn-primary">PDFをアップロード</button>
     </form>
 </div>
 

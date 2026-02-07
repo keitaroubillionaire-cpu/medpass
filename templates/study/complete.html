@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}学習完了 - MedPass{% endblock %}
+
+{% block content %}
+<div class="study-complete">
+    <div class="complete-card">
+        <h1>学習完了!</h1>
+        <p class="complete-message">お疲れ様でした。全ての問題を学習しました。</p>
+
+        <div class="complete-actions">
+            <a href="/study" class="btn btn-primary">もう一度学習する</a>
+            <a href="/" class="btn btn-secondary">ダッシュボードへ</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

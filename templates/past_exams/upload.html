@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}過去問アップロード - {{ subject.name }} - MedPass{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="/past-exams">過去問</a> &gt;
+    {{ subject.name }}
+</nav>
+
+<h1>{{ subject.name }} - 過去問アップロード</h1>
+
+{% if not api_configured %}
+<div class="error-message">
+    APIが設定されていません。.envファイルにANTHROPIC_API_KEYを設定してください。
+</div>
+{% endif %}
+
+{% if request.query_params.get('error') == 'invalid_file' %}
+<div class="error-message">対応していないファイル形式です。PDF、PNG、JPG、GIF、WebPに対応しています。</div>
+{% elif request.query_params.get('error') == 'api_not_configured' %}
+<div class="error-message">APIが設定されていません。</div>
+{% elif request.query_params.get('error') == 'no_text' %}
+<div class="error-message">PDFからテキストを抽出できませんでした。画像としてアップロードしてください。</div>
+{% elif request.query_params.get('error') == 'parse_failed' %}
+<div class="error-message">過去問の解析に失敗しました。ファイルを確認してください。</div>
+{% elif request.query_params.get('error') == 'pdf_error' %}
+<div class="error-message">ファイルの読み込みに失敗しました。</div>
+{% elif request.query_params.get('error') == 'upload_error' %}
+<div class="error-message">アップロード中にエラーが発生しました。</div>
+{% endif %}
+
+<div class="form-section">
+    <h2>過去問をアップロード</h2>
+    <form action="/past-exams/upload/{{ subject.id }}" method="post" enctype="multipart/form-data" class="form-vertical">
+        <div class="form-group">
+            <label for="exam_file">過去問ファイル（PDF / 画像）</label>
+            <input type="file" id="exam_file" name="exam_file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp" required>
+            <p class="form-help">過去問のPDFまたはスクリーンショット（PNG/JPG）を選択してください。AIが問題と解答を自動で抽出します。</p>
+        </div>
+
+        {% if lectures %}
+        <div class="form-group">
+            <label for="lecture_id">紐づける講義（任意）</label>
+            <select id="lecture_id" name="lecture_id">
+                <option value="">自動で判定</option>
+                {% for lecture in lectures %}
+                <option value="{{ lecture.id }}">{{ lecture.title }}</option>
+                {% endfor %}
+            </select>
+            <p class="form-help">特定の講義に紐づける場合は選択してください。</p>
+        </div>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" {% if not api_configured %}disabled{% endif %}>
+                アップロードして解析
+            </button>
+            <a href="/past-exams" class="btn btn-secondary">キャンセル</a>
+        </div>
+    </form>
+</div>
+
+<div class="info-section">
+    <h3>対応フォーマット</h3>
+    <ul>
+        <li><strong>画像:</strong> PNG, JPG, GIF, WebP（スクリーンショットOK）</li>
+        <li><strong>PDF:</strong> テキストが埋め込まれたPDF</li>
+    </ul>
+    <p class="form-help">スクリーンショットを撮ってそのままアップロードできます。</p>
+</div>
+{% endblock %}

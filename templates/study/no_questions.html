@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}問題がありません - MedPass{% endblock %}
+
+{% block content %}
+<div class="study-complete">
+    <div class="complete-card">
+        <h1>問題がありません</h1>
+        <p class="complete-message">
+            {% if mode == "weak" %}
+            苦手な問題はありません。素晴らしい!
+            {% elif mode == "unattempted" %}
+            未回答の問題はありません。全て学習済みです!
+            {% elif mode == "high_importance" %}
+            重要度の高い問題がありません。
+            {% else %}
+            条件に合う問題が見つかりませんでした。
+            {% endif %}
+        </p>
+
+        <div class="complete-actions">
+            <a href="/study" class="btn btn-primary">学習モードに戻る</a>
+            <a href="/cards" class="btn btn-secondary">カード一覧へ</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

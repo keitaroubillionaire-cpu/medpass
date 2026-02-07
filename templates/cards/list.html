@@ -55,12 +55,21 @@
             {% endif %}
             <div class="card-meta">
                 <span>問題数: {{ card.questions|length }}</span>
+                {% set past_exam_count = card.questions|selectattr('is_past_exam')|list|length %}
+                {% if past_exam_count > 0 %}
+                <span class="tag tag-past-exam">過去問{{ past_exam_count }}件</span>
+                {% else %}
+                <span class="tag tag-no-past-exam">未出テーマ</span>
+                {% endif %}
                 {% if card.lecture %}
                 <span>講義: {{ card.lecture.title }}</span>
                 {% endif %}
             </div>
             <div class="card-actions">
                 <a href="/questions?card_id={{ card.id }}" class="btn btn-small">問題一覧</a>
+                <form action="/cards/{{ card.id }}/generate-question" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-small btn-success" onclick="return confirm('AIで問題を自動生成しますか？')">AI生成</button>
+                </form>
                 <form action="/cards/{{ card.id }}/delete" method="post" style="display: inline;">
                     <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('このカードを削除しますか？関連する問題も全て削除されます。')">削除</button>
                 </form>

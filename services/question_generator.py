@@ -1,45 +1,224 @@
 """
-Question generation service.
-MVP: Manual question creation through UI.
-Future: LLM-powered automatic question generation from cards.
+Question generation service using Claude API.
+Generates exam questions from card themes and summaries.
 """
 
+import os
+import json
 from typing import List, Dict
 
+import anthropic
+from dotenv import load_dotenv
 
-def generate_questions_from_card(theme: str, summary: str) -> List[Dict]:
+load_dotenv()
+
+# Initialize Anthropic client
+client = None
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+if ANTHROPIC_API_KEY:
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+
+QUESTION_GENERATION_PROMPT = """あなたは医学部の定期試験問題を作成する専門家です。
+以下のテーマと要約から、定期試験で出題されそうな記述式問題を作成してください。
+
+## テーマ
+{theme}
+
+## 要約
+{summary}
+
+## 作成ルール
+1. 200字程度で解答できる記述式問題を1問作成
+2. 問題文は明確で、何を答えるべきかがわかりやすいこと
+3. 模範解答は200字程度で、要点を押さえた内容
+4. 採点基準は具体的なポイントを箇条書きで記載
+
+## 出力形式
+以下のJSON形式で出力してください。JSON以外のテキストは含めないでください。
+
+{{
+  "question_text": "問題文",
+  "answer_200": "模範解答（200字程度）",
+  "rubric": "採点基準（箇条書き）"
+}}
+"""
+
+
+def generate_question_from_card(theme: str, summary: str) -> Dict:
     """
-    Generate questions from a card's theme and summary.
-
-    MVP implementation: Returns empty list (manual creation required).
-    Future: Will use LLM to generate relevant exam questions.
+    Generate a question from a card's theme and summary using Claude API.
 
     Args:
         theme: Card theme
         summary: Card summary
 
     Returns:
-        List of question dictionaries with keys:
-        question_text, answer_200, rubric, source_slide
+        Dictionary with keys: question_text, answer_200, rubric
+        Returns empty dict if generation fails
     """
-    # MVP: Return empty list - questions are created manually
-    # Future implementation will use LLM to generate questions
-    return []
+    if not client:
+        return {}
+
+    if not theme:
+        return {}
+
+    try:
+        prompt = QUESTION_GENERATION_PROMPT.format(
+            theme=theme,
+            summary=summary or "(要約なし)"
+        )
+
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        # Parse response
+        response_text = message.content[0].text.strip()
+
+        # Handle markdown code blocks
+        if response_text.startswith("```"):
+            lines = response_text.split("\n")
+            json_lines = []
+            in_json = False
+            for line in lines:
+                if line.startswith("```json"):
+                    in_json = True
+                    continue
+                elif line.startswith("```"):
+                    in_json = False
+                    continue
+                if in_json:
+                    json_lines.append(line)
+            response_text = "\n".join(json_lines)
+
+        data = json.loads(response_text)
+
+        return {
+            "question_text": str(data.get("question_text", ""))[:1000],
+            "answer_200": str(data.get("answer_200", ""))[:1000],
+            "rubric": str(data.get("rubric", ""))[:1000]
+        }
+
+    except anthropic.APIError as e:
+        print(f"Anthropic API error: {e}")
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"JSON parse error: {e}")
+        return {}
+    except Exception as e:
+        print(f"Unexpected error in question generation: {e}")
+        return {}
 
 
-def generate_rubric(question: str, answer: str) -> str:
+def generate_multiple_questions(theme: str, summary: str, count: int = 3) -> List[Dict]:
     """
-    Generate grading rubric for a question.
-
-    MVP implementation: Returns empty string (manual creation required).
-    Future: Will use LLM to create detailed rubric.
+    Generate multiple questions from a card.
 
     Args:
-        question: Question text
-        answer: Model answer
+        theme: Card theme
+        summary: Card summary
+        count: Number of questions to generate (1-5)
 
     Returns:
-        Rubric text
+        List of question dictionaries
     """
-    # MVP: Empty rubric
-    return ""
+    if not client:
+        return []
+
+    count = max(1, min(5, count))
+
+    prompt = f"""あなたは医学部の定期試験問題を作成する専門家です。
+以下のテーマと要約から、定期試験で出題されそうな記述式問題を{count}問作成してください。
+
+## テーマ
+{theme}
+
+## 要約
+{summary or "(要約なし)"}
+
+## 作成ルール
+1. 各問題は200字程度で解答できる記述式問題
+2. 問題文は明確で、何を答えるべきかがわかりやすいこと
+3. 模範解答は200字程度で、要点を押さえた内容
+4. 採点基準は具体的なポイントを箇条書きで記載
+5. 問題同士が重複しないよう、異なる観点から出題
+
+## 出力形式
+以下のJSON形式で出力してください。JSON以外のテキストは含めないでください。
+
+{{
+  "questions": [
+    {{
+      "question_text": "問題文1",
+      "answer_200": "模範解答1",
+      "rubric": "採点基準1"
+    }},
+    {{
+      "question_text": "問題文2",
+      "answer_200": "模範解答2",
+      "rubric": "採点基準2"
+    }}
+  ]
+}}
+"""
+
+    try:
+        message = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=4096,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        response_text = message.content[0].text.strip()
+
+        # Handle markdown code blocks
+        if response_text.startswith("```"):
+            lines = response_text.split("\n")
+            json_lines = []
+            in_json = False
+            for line in lines:
+                if line.startswith("```json"):
+                    in_json = True
+                    continue
+                elif line.startswith("```"):
+                    in_json = False
+                    continue
+                if in_json:
+                    json_lines.append(line)
+            response_text = "\n".join(json_lines)
+
+        data = json.loads(response_text)
+        questions = data.get("questions", [])
+
+        result = []
+        for q in questions:
+            if "question_text" in q:
+                result.append({
+                    "question_text": str(q.get("question_text", ""))[:1000],
+                    "answer_200": str(q.get("answer_200", ""))[:1000],
+                    "rubric": str(q.get("rubric", ""))[:1000]
+                })
+
+        return result
+
+    except Exception as e:
+        print(f"Error generating multiple questions: {e}")
+        return []
+
+
+def is_api_configured() -> bool:
+    """Check if Anthropic API is configured."""
+    return client is not None

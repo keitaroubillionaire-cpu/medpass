@@ -14,6 +14,12 @@
 <h1>全問題一覧</h1>
 {% endif %}
 
+{% if request.query_params.get('error') == 'api_not_configured' %}
+<p class="error-message">APIが設定されていません。.envファイルにANTHROPIC_API_KEYを設定してください。</p>
+{% elif request.query_params.get('error') == 'generation_failed' %}
+<p class="error-message">問題の生成に失敗しました。もう一度お試しください。</p>
+{% endif %}
+
 {% if card %}
 <div class="form-section">
     <h2>新規問題追加</h2>

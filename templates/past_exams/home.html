@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}過去問アップロード - MedPass{% endblock %}
+
+{% block content %}
+<h1>過去問アップロード</h1>
+<p class="subtitle">過去問PDFをアップロードして問題を自動抽出します</p>
+
+{% if not api_configured %}
+<div class="error-message">
+    APIが設定されていません。.envファイルにANTHROPIC_API_KEYを設定してください。
+</div>
+{% endif %}
+
+<div class="dashboard-section">
+    <h2>科目を選択</h2>
+
+    {% if subject_stats %}
+    <div class="subject-list-cards">
+        {% for item in subject_stats %}
+        <div class="subject-card">
+            <div class="subject-card-header">
+                <h3>{{ item.subject.name }}</h3>
+            </div>
+            <div class="subject-card-stats">
+                <div class="stat-item">
+                    <span class="stat-label">過去問</span>
+                    <span class="stat-value">{{ item.past_exam_count }}問</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">全問題</span>
+                    <span class="stat-value">{{ item.total_questions }}問</span>
+                </div>
+            </div>
+            <div class="subject-card-actions">
+                <a href="/past-exams/upload/{{ item.subject.id }}" class="btn btn-primary">過去問をアップロード</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>まだ科目がありません。</p>
+        <p><a href="/subjects">科目を作成</a>してから過去問をアップロードしてください。</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="tips-section">
+    <h3>過去問アップロードのヒント</h3>
+    <ul>
+        <li>過去問PDFをアップロードすると、AIが問題と解答を自動で抽出します</li>
+        <li>抽出された問題は自動で「過去問」フラグが付きます</li>
+        <li>既存のカード（テーマ）と類似していれば自動で紐づけられます</li>
+        <li>新しいテーマの問題は自動でカードが作成されます</li>
+    </ul>
+</div>
+{% endblock %}

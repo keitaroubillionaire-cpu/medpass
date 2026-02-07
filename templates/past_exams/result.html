@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}アップロード完了 - MedPass{% endblock %}
+
+{% block content %}
+<div class="study-complete">
+    <div class="complete-card">
+        <h1>過去問を追加しました!</h1>
+        <p class="complete-message">
+            {{ subject.name if subject else '選択した科目' }}に<strong>{{ count }}問</strong>の過去問を追加しました。
+        </p>
+
+        <div class="complete-actions">
+            <a href="/past-exams/upload/{{ subject.id if subject else '' }}" class="btn btn-primary">さらにアップロード</a>
+            <a href="/questions" class="btn btn-secondary">問題一覧を見る</a>
+            <a href="/study" class="btn btn-secondary">学習を始める</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

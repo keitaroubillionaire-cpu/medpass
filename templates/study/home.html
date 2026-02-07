@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}学習モード - MedPass{% endblock %}
+
+{% block content %}
+<h1>学習モード</h1>
+<p class="subtitle">問題を1つずつ解いて学習しましょう</p>
+
+<div class="study-options">
+    <div class="dashboard-section">
+        <h2>全科目で学習</h2>
+        <p class="section-desc">全ての問題から学習します（{{ total_questions }}問）</p>
+
+        <div class="study-mode-buttons">
+            <a href="/study/session?mode=all" class="btn btn-primary">全ての問題</a>
+            <a href="/study/session?mode=weak" class="btn btn-secondary">苦手な問題</a>
+            <a href="/study/session?mode=unattempted" class="btn btn-secondary">未回答の問題</a>
+            <a href="/study/session?mode=high_importance" class="btn btn-secondary">重要度高のみ</a>
+        </div>
+    </div>
+
+    {% if subject_stats %}
+    <div class="dashboard-section">
+        <h2>科目別に学習</h2>
+        <div class="subject-study-list">
+            {% for item in subject_stats %}
+            <div class="subject-study-item">
+                <div class="subject-info">
+                    <h3>{{ item.subject.name }}</h3>
+                    <span class="count">{{ item.question_count }}問</span>
+                </div>
+                <div class="subject-actions">
+                    <a href="/study/session?subject_id={{ item.subject.id }}&mode=all" class="btn btn-small btn-primary">学習開始</a>
+                    <a href="/study/session?subject_id={{ item.subject.id }}&mode=weak" class="btn btn-small btn-secondary">苦手のみ</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>まだ問題がありません。</p>
+        <p><a href="/cards">カード一覧</a>から問題を作成してください。</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

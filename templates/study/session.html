@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}学習中 - MedPass{% endblock %}
+
+{% block content %}
+<div class="study-container">
+    <div class="study-header">
+        <a href="/study" class="btn btn-small btn-secondary">終了</a>
+        <div class="study-progress">
+            <span class="progress-text">{{ current_index + 1 }} / {{ total_count }}</span>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ ((current_index + 1) / total_count * 100) | int }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="study-card">
+        <div class="card-info">
+            <span class="tag">{{ current_question.card.lecture.subject.name }}</span>
+            <span class="tag">{{ current_question.card.lecture.title }}</span>
+            <span class="importance">{{ "★" * current_question.card.importance }}{{ "☆" * (3 - current_question.card.importance) }}</span>
+        </div>
+
+        <div class="theme-label">
+            <strong>テーマ:</strong> {{ current_question.card.theme }}
+        </div>
+
+        <div class="question-display">
+            <h2>問題</h2>
+            <p class="question-text-large">{{ current_question.question_text }}</p>
+        </div>
+
+        {% if not show_answer %}
+        <div class="study-actions">
+            <a href="/study/session/{{ current_question.id }}?show_answer=true&subject_id={{ subject_id or '' }}&lecture_id={{ lecture_id or '' }}&mode={{ mode }}&current_index={{ current_index }}&total_count={{ total_count }}" class="btn btn-primary btn-large">解答を見る</a>
+        </div>
+        {% else %}
+        <div class="answer-display">
+            <h3>模範解答</h3>
+            <div class="answer-box">
+                <p>{{ current_question.answer_200 }}</p>
+            </div>
+
+            {% if current_question.rubric %}
+            <h3>採点基準</h3>
+            <div class="rubric-box">
+                <p>{{ current_question.rubric }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="scoring-section">
+            <h3>自己採点</h3>
+            <form action="/study/session/{{ current_question.id }}/score" method="post" class="score-form">
+                <input type="hidden" name="subject_id" value="{{ subject_id or '' }}">
+                <input type="hidden" name="lecture_id" value="{{ lecture_id or '' }}">
+                <input type="hidden" name="mode" value="{{ mode }}">
+                <input type="hidden" name="current_index" value="{{ current_index }}">
+                <input type="hidden" name="total_count" value="{{ total_count }}">
+                {% if current_index + 1 < total_count %}
+                <input type="hidden" name="next_question_id" value="{{ questions[current_index + 1].id }}">
+                {% endif %}
+
+                <div class="score-buttons">
+                    <button type="submit" name="score" value="0" class="score-btn score-0">0<br><small>全く分からない</small></button>
+                    <button type="submit" name="score" value="3" class="score-btn score-3">3<br><small>一部分かる</small></button>
+                    <button type="submit" name="score" value="5" class="score-btn score-5">5<br><small>半分程度</small></button>
+                    <button type="submit" name="score" value="7" class="score-btn score-7">7<br><small>だいたい分かる</small></button>
+                    <button type="submit" name="score" value="10" class="score-btn score-10">10<br><small>完璧</small></button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

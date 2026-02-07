@@ -36,7 +36,7 @@ async def generate_print(request: Request, lecture_id: int, db: Session = Depend
     filename = f"lecture_{lecture_id}_{timestamp}.pdf"
     pdf_path = os.path.join(PRINTS_DIR, filename)
 
-    generate_lecture_pdf(lecture, cards, pdf_path)
+    output_path, pdf_info = generate_lecture_pdf(lecture, cards, pdf_path, max_pages=2)
 
     # Save print record
     print_record = Print(lecture_id=lecture_id, pdf_path=pdf_path)
@@ -44,7 +44,7 @@ async def generate_print(request: Request, lecture_id: int, db: Session = Depend
     db.commit()
 
     return FileResponse(
-        pdf_path,
+        output_path,
         media_type="application/pdf",
         filename=f"{lecture.title}_まとめ.pdf"
     )
