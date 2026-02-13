@@ -1,6 +1,6 @@
 """
 Past exam parser service.
-Extracts questions and answers from past exam PDFs and images using Claude API.
+Extracts questions and answers from past exam PDFs and images using Google Gemini API.
 """
 
 import os
@@ -8,16 +8,17 @@ import json
 import base64
 from typing import List, Dict
 
-import anthropic
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize Anthropic client
+# Initialize Gemini client
 client = None
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-if ANTHROPIC_API_KEY:
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    client = genai.GenerativeModel("gemini-2.0-flash")
 
 
 # Supported image formats
@@ -62,9 +63,38 @@ PAST_EXAM_PARSE_PROMPT = """あなたは医学部の定期試験の過去問を�
 """
 
 
+PAST_EXAM_IMAGE_PROMPT = """あなたは医学部の定期試験の過去問を解析する専門家です。
+この過去問の画像から、個々の問題と解答を抽出してください。
+
+## 抽出ルール
+1. 問題文と解答（あれば）を正確に抽出
+2. 問題番号があれば記録
+3. 解答がない場合は空文字列
+4. 問題のテーマ（何について問われているか）を20字以内で推定
+5. 各問題の重要度を推定（1-3）:
+   - 3: 頻出・基本的な内容
+   - 2: 標準的な問題
+   - 1: 発展的・マイナーな内容
+
+## 出力形式
+以下のJSON形式で出力してください。JSON以外のテキストは含めないでください。
+
+{
+  "questions": [
+    {
+      "question_number": "問1",
+      "question_text": "問題文",
+      "answer": "解答（あれば）",
+      "theme": "推定テーマ",
+      "importance": 2
+    }
+  ]
+}"""
+
+
 def parse_past_exam_pdf(pdf_text: str) -> List[Dict]:
     """
-    Parse past exam text and extract questions using Claude API.
+    Parse past exam text and extract questions using Gemini API.
 
     Args:
         pdf_text: Text extracted from past exam PDF
@@ -80,19 +110,10 @@ def parse_past_exam_pdf(pdf_text: str) -> List[Dict]:
         return []
 
     try:
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=8192,
-            messages=[
-                {
-                    "role": "user",
-                    "content": PAST_EXAM_PARSE_PROMPT + pdf_text
-                }
-            ]
-        )
+        response = client.generate_content(PAST_EXAM_PARSE_PROMPT + pdf_text)
 
         # Parse response
-        response_text = message.content[0].text.strip()
+        response_text = response.text.strip()
 
         # Handle markdown code blocks
         if response_text.startswith("```"):
@@ -126,9 +147,6 @@ def parse_past_exam_pdf(pdf_text: str) -> List[Dict]:
 
         return result
 
-    except anthropic.APIError as e:
-        print(f"Anthropic API error: {e}")
-        return []
     except json.JSONDecodeError as e:
         print(f"JSON parse error: {e}")
         return []
@@ -172,7 +190,7 @@ def match_question_to_card(question_theme: str, cards: list) -> int:
 
 def parse_past_exam_image(image_bytes: bytes, media_type: str) -> List[Dict]:
     """
-    Parse past exam image and extract questions using Claude Vision API.
+    Parse past exam image and extract questions using Gemini Vision API.
 
     Args:
         image_bytes: Raw image bytes
@@ -186,61 +204,19 @@ def parse_past_exam_image(image_bytes: bytes, media_type: str) -> List[Dict]:
         return []
 
     try:
-        # Encode image to base64
-        image_base64 = base64.standard_b64encode(image_bytes).decode("utf-8")
+        # Create image part for Gemini
+        image_part = {
+            "mime_type": media_type,
+            "data": image_bytes
+        }
 
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=8192,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": image_base64
-                            }
-                        },
-                        {
-                            "type": "text",
-                            "text": """あなたは医学部の定期試験の過去問を解析する専門家です。
-この過去問の画像から、個々の問題と解答を抽出してください。
-
-## 抽出ルール
-1. 問題文と解答（あれば）を正確に抽出
-2. 問題番号があれば記録
-3. 解答がない場合は空文字列
-4. 問題のテーマ（何について問われているか）を20字以内で推定
-5. 各問題の重要度を推定（1-3）:
-   - 3: 頻出・基本的な内容
-   - 2: 標準的な問題
-   - 1: 発展的・マイナーな内容
-
-## 出力形式
-以下のJSON形式で出力してください。JSON以外のテキストは含めないでください。
-
-{
-  "questions": [
-    {
-      "question_number": "問1",
-      "question_text": "問題文",
-      "answer": "解答（あれば）",
-      "theme": "推定テーマ",
-      "importance": 2
-    }
-  ]
-}"""
-                        }
-                    ]
-                }
-            ]
-        )
+        response = client.generate_content([
+            PAST_EXAM_IMAGE_PROMPT,
+            image_part
+        ])
 
         # Parse response
-        response_text = message.content[0].text.strip()
+        response_text = response.text.strip()
 
         # Handle markdown code blocks
         if response_text.startswith("```"):
@@ -274,9 +250,6 @@ def parse_past_exam_image(image_bytes: bytes, media_type: str) -> List[Dict]:
 
         return result
 
-    except anthropic.APIError as e:
-        print(f"Anthropic API error: {e}")
-        return []
     except json.JSONDecodeError as e:
         print(f"JSON parse error: {e}")
         return []
@@ -297,5 +270,5 @@ def is_supported_image(filename: str) -> bool:
 
 
 def is_api_configured() -> bool:
-    """Check if Anthropic API is configured."""
+    """Check if Gemini API is configured."""
     return client is not None

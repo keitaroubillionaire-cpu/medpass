@@ -1,5 +1,5 @@
 """
-Question generation service using Claude API.
+Question generation service using Google Gemini API.
 Generates exam questions from card themes and summaries.
 """
 
@@ -7,16 +7,17 @@ import os
 import json
 from typing import List, Dict
 
-import anthropic
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize Anthropic client
+# Initialize Gemini client
 client = None
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-if ANTHROPIC_API_KEY:
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    client = genai.GenerativeModel("gemini-2.0-flash")
 
 
 QUESTION_GENERATION_PROMPT = """あなたは医学部の定期試験問題を作成する専門家です。
@@ -47,7 +48,7 @@ QUESTION_GENERATION_PROMPT = """あなたは医学部の定期試験問題を作
 
 def generate_question_from_card(theme: str, summary: str) -> Dict:
     """
-    Generate a question from a card's theme and summary using Claude API.
+    Generate a question from a card's theme and summary using Gemini API.
 
     Args:
         theme: Card theme
@@ -69,19 +70,10 @@ def generate_question_from_card(theme: str, summary: str) -> Dict:
             summary=summary or "(要約なし)"
         )
 
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=1024,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        )
+        response = client.generate_content(prompt)
 
         # Parse response
-        response_text = message.content[0].text.strip()
+        response_text = response.text.strip()
 
         # Handle markdown code blocks
         if response_text.startswith("```"):
@@ -107,9 +99,6 @@ def generate_question_from_card(theme: str, summary: str) -> Dict:
             "rubric": str(data.get("rubric", ""))[:1000]
         }
 
-    except anthropic.APIError as e:
-        print(f"Anthropic API error: {e}")
-        return {}
     except json.JSONDecodeError as e:
         print(f"JSON parse error: {e}")
         return {}
@@ -171,18 +160,9 @@ def generate_multiple_questions(theme: str, summary: str, count: int = 3) -> Lis
 """
 
     try:
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=4096,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        )
+        response = client.generate_content(prompt)
 
-        response_text = message.content[0].text.strip()
+        response_text = response.text.strip()
 
         # Handle markdown code blocks
         if response_text.startswith("```"):
@@ -220,5 +200,5 @@ def generate_multiple_questions(theme: str, summary: str, count: int = 3) -> Lis
 
 
 def is_api_configured() -> bool:
-    """Check if Anthropic API is configured."""
+    """Check if Gemini API is configured."""
     return client is not None

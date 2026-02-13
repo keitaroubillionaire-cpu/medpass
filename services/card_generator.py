@@ -1,5 +1,5 @@
 """
-Card generation service using Claude API.
+Card generation service using Google Gemini API.
 Extracts themes and summaries from lecture OCR text.
 """
 
@@ -7,16 +7,17 @@ import os
 import json
 from typing import List, Dict, Optional
 
-import anthropic
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize Anthropic client
+# Initialize Gemini client
 client = None
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-if ANTHROPIC_API_KEY:
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    client = genai.GenerativeModel("gemini-2.0-flash")
 
 EXTRACTION_PROMPT = """あなたは医学部の定期試験対策を支援するアシスタントです。
 以下の授業スライドのOCRテキストから、試験に出題されそうな重要テーマを抽出してください。
@@ -49,7 +50,7 @@ EXTRACTION_PROMPT = """あなたは医学部の定期試験対策を支援する
 
 def extract_themes_from_content(content: str) -> List[Dict]:
     """
-    Extract themes from lecture content using Claude API.
+    Extract themes from lecture content using Gemini API.
 
     Args:
         content: OCR text from lecture slides
@@ -64,19 +65,10 @@ def extract_themes_from_content(content: str) -> List[Dict]:
         return []
 
     try:
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=4096,
-            messages=[
-                {
-                    "role": "user",
-                    "content": EXTRACTION_PROMPT + content
-                }
-            ]
-        )
+        response = client.generate_content(EXTRACTION_PROMPT + content)
 
         # Parse response
-        response_text = message.content[0].text.strip()
+        response_text = response.text.strip()
 
         # Try to extract JSON from response
         # Handle cases where response might have markdown code blocks
@@ -110,9 +102,6 @@ def extract_themes_from_content(content: str) -> List[Dict]:
 
         return result
 
-    except anthropic.APIError as e:
-        print(f"Anthropic API error: {e}")
-        return []
     except json.JSONDecodeError as e:
         print(f"JSON parse error: {e}")
         return []
@@ -147,5 +136,5 @@ def suggest_card_importance(theme: str, content: str) -> int:
 
 
 def is_api_configured() -> bool:
-    """Check if Anthropic API is configured."""
+    """Check if Gemini API is configured."""
     return client is not None
