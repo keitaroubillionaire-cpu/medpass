@@ -11,21 +11,26 @@ from auth import get_password_hash, verify_password, create_access_token, get_cu
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+# Render等の本番環境ではHTTPS必須
+IS_PRODUCTION = os.getenv("DATABASE_URL") is not None
+
 def set_auth_cookie(response: RedirectResponse, token: str):
     """Set authentication cookie."""
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
+        secure=IS_PRODUCTION,  # HTTPS環境ではTrue
         max_age=30 * 24 * 60 * 60,  # 30 days
-        path="/"
+        path="/",
+        samesite="lax" if IS_PRODUCTION else "lax"
     )
     return response
 
 
 @router.get("/login")
-async def login_page(request: Request):
-    user = get_current_user(request, next(get_db()))
+async def login_page(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
     if user:
         return RedirectResponse(url="/", status_code=302)
     return templates.TemplateResponse("auth/login.html", {
@@ -83,5 +88,5 @@ async def register(
 @router.get("/logout")
 async def logout():
     response = RedirectResponse(url="/auth/login", status_code=302)
-    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="access_token", path="/", secure=IS_PRODUCTION)
     return response
