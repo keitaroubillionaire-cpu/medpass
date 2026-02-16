@@ -62,10 +62,9 @@ async def login(
 
 @router.get("/register")
 async def register_page(request: Request):
-    # 新規登録は停止中
     return templates.TemplateResponse("auth/register.html", {
         "request": request,
-        "error": "新規登録は現在停止しています"
+        "error": None
     })
 
 
@@ -78,11 +77,36 @@ async def register(
     password_confirm: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    # 新規登録は停止中
-    return templates.TemplateResponse("auth/register.html", {
-        "request": request,
-        "error": "新規登録は現在停止しています"
-    })
+    # バリデーション
+    if password != password_confirm:
+        return templates.TemplateResponse("auth/register.html", {
+            "request": request,
+            "error": "パスワードが一致しません"
+        })
+
+    # メールアドレスの重複チェック
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        return templates.TemplateResponse("auth/register.html", {
+            "request": request,
+            "error": "このメールアドレスは既に登録されています"
+        })
+
+    # ユーザー作成
+    hashed_password = get_password_hash(password)
+    new_user = User(
+        email=email,
+        username=username,
+        hashed_password=hashed_password
+    )
+    db.add(new_user)
+    db.commit()
+
+    # ログイン状態にしてリダイレクト
+    access_token = create_access_token(data={"sub": str(new_user.id)})
+    response = RedirectResponse(url="/", status_code=303)
+    set_auth_cookie(response, access_token)
+    return response
 
 
 @router.get("/logout")
